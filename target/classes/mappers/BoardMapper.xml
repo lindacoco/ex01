@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mappers.BoardMapper">
+    <resultMap type="BoardVO" id="BoardResult">
+       <id property="bno" column="bno"/>
+       <id property="title" column="title"/>
+       <id property="content" column="content"/>
+       <id property="writer" column="writer"/>
+       <id property="regdate" column="regdate"/>
+       <id property="viewcnt" column="viewcnt"/>
+       <id property="replycnt" column="replycnt"/>
+       <collection property="files" ofType="java.lang.String" javaType="list">
+          <result column="fullName"/>
+       </collection>
+    </resultMap>
+ 
+  <insert id="insert" parameterType="BoardVO">
+     insert into tbl_board(title, content, writer) values
+     (#{title}, #{content}, #{writer})
+  </insert>
+  <select id="readByNo" resultType="BoardVO">
+     select * from tbl_board
+     where bno = #{bno}
+  </select>
+  
+  <select id="readAttachByBno" resultMap="BoardResult">
+    select * from tbl_board b left join tbl_attach a 
+     on b.bno = a.bno where b.bno=#{bno}
+  </select>
+   
+  
+  <select id="list" resultType="BoardVO">
+     select * from tbl_board order by bno desc
+  </select>
+   <delete id="delete">
+       delete from tbl_board 
+       where bno= #{bno}
+    </delete>
+    <update id="update" parameterType="BoardVO">
+       update tbl_board  set 
+       title =#{title}, content = #{content}, viewcnt=#{viewcnt}
+       where bno=#{bno}
+    </update> 
+    <select id="listPage" resultType="BoardVO">
+      select * from tbl_board tb order by bno desc limit #{page},10
+    </select>
+    <select id="listCriteria" resultType="BoardVO">
+      select * from tbl_board tb order by bno desc limit #{pageStart}, #{perPageNum}
+    </select>
+    <select id="totalCount" resultType="int">
+       select  count(title) from tbl_board tb
+    </select>
+    
+    
+    <sql id="search">
+        <if test="searchType=='t'.toString()">
+	       where title like CONCAT('%',#{keyword},'%')
+	      </if>
+	      <if test="searchType=='c'.toString()">
+	       where content like CONCAT('%',#{keyword},'%')
+	      </if>
+	      <if test="searchType=='w'.toString()">
+	       where writer like CONCAT('%',#{keyword},'%')
+	      </if>
+	      <if test="searchType=='tc'.toString()">
+	       where title like CONCAT('%',#{keyword},'%') or content like concat('%','${keyword}','%')
+	      </if>
+	      <if test="searchType=='cw'.toString()">
+	       where content like CONCAT('%',#{keyword},'%') or writer like concat('%','${keyword}','%')
+	      </if>
+	      <if test="searchType=='tcw'.toString()">
+	       where title like CONCAT('%',#{keyword}','%') or content like concat('%','${keyword}','%') or writer like concat('%','${keyword}','%')
+	      </if>
+    </sql>
+    
+    
+    <select id="totalSearchCount" resultType="int">
+        select  count(title) from tbl_board tb
+	    <include refid="search"></include>  
+    
+    </select>
+    
+     <select id="listSearchCriteria" resultType="BoardVO">
+      select * from tbl_board tb 
+      <include refid="search"></include>
+      order by bno desc limit #{pageStart}, #{perPageNum}
+    </select>
+    
+    <update id="updateReplyCnt">
+       update tbl_board set replycnt = replycnt + #{amount} where bno = #{bno};
+    </update>
+    
+    <insert id="insertAttach">
+        insert into tbl_attach (fullName, bno) values (#{fullName},LAST_INSERT_ID())
+    </insert>
+     
+    <delete id="delPic">
+       delete from tbl_attach where fullName = #{fullName}
+    </delete> 
+    
+    <insert id="insertAttachNUpdate" >
+      insert into tbl_attach (fullName, bno) values (#{fullName},#{bno})
+    </insert>
+    <delete id="deleteAttach">
+       delete from tbl_attach where fullName = #{fullName}
+    </delete>
+    <delete id="deleteAttachByBno">
+        delete from tbl_attach where bno = #{bno}
+    </delete>
+   
+    
+</mapper>
